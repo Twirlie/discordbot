@@ -17,8 +17,7 @@ impl EventHandler for Handler {
     // Event handlers are dispatched through a threadpool, and so multiple events can be
     // dispatched simultaneously.
     async fn message(&self, ctx: Context, msg: Message) {
-        let guild_result =
-            util::get_server_and_channel_name(&ctx, &msg.guild_id, &msg.channel_id).await;
+        let guild_result = util::get_server_and_channel_name(&ctx, &msg.guild_id, &msg.channel_id);
         logger::log_message(guild_result, &msg.content, &msg.author.name);
         if msg.content == "!ping" {
             // Sending a message can fail, due to a network error, an authentication error, or lack

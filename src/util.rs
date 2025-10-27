@@ -1,7 +1,7 @@
 use serenity::prelude::*;
 
 // get server name from guild id
-pub async fn get_server_and_channel_name(
+pub fn get_server_and_channel_name(
     ctx: &Context,
     message_guild_id: &Option<serenity::model::id::GuildId>,
     channel_id: &serenity::model::id::ChannelId,
