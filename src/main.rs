@@ -1,5 +1,4 @@
 use dotenv::dotenv;
-use serenity::model::guild;
 use std::env;
 
 use serenity::async_trait;

@@ -11,7 +11,7 @@ pub fn format_message(
             let author = author_name.blue().bold();
             let channel = guild_result.1.to_string().purple().italic();
             format!(
-                "[{} | Channel {}]\n {}: {}",
+                "[{} | {}]\n {}: {}",
                 guild_result.0.yellow().italic(),
                 channel,
                 author,
@@ -38,12 +38,18 @@ pub fn log_message(
 mod tests {
     use super::*;
     #[test]
-    fn test_log_message() {
+    fn test_log_message_formatting() {
         let guild_result = Ok(("TestServer".to_string(), "general".to_string()));
         let content = "Hello".green();
         let author = "Alice".blue().bold();
-        let channel = 123.to_string().purple().italic();
-        let test_message = format!("[Channel {}]\n {}: {}", channel, author, content);
+        let channel = "general".purple().italic();
+        let test_message = format!(
+            "[{} | {}]\n {}: {}",
+            "TestServer".yellow().italic(),
+            channel,
+            author,
+            content
+        );
         let s = format_message(guild_result, "Hello", "Alice");
         assert_eq!(s, test_message);
     }
