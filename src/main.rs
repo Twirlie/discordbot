@@ -1,42 +1,23 @@
 use dotenv::dotenv;
 use std::env;
 
-use serenity::async_trait;
-use serenity::model::channel::Message;
-use serenity::model::gateway::Ready;
+use poise::serenity_prelude as serenity;
 use serenity::prelude::*;
 
-mod logger;
-mod util;
-struct Handler;
+struct Data {}
+type Error = Box<dyn std::error::Error + Send + Sync>;
+type Context<'a> = poise::Context<'a, Data, Error>;
 
-#[async_trait]
-impl EventHandler for Handler {
-    // Set a handler for the `message` event. This is called whenever a new message is received.
-    //
-    // Event handlers are dispatched through a threadpool, and so multiple events can be
-    // dispatched simultaneously.
-    async fn message(&self, ctx: Context, msg: Message) {
-        let guild_result = util::get_server_and_channel_name(&ctx, &msg.guild_id, &msg.channel_id);
-        logger::log_message(guild_result, &msg.content, &msg.author.name);
-        if msg.content == "!ping" {
-            // Sending a message can fail, due to a network error, an authentication error, or lack
-            // of permissions to post in the channel, so log to stdout when some error happens,
-            // with a description of it.
-            if let Err(why) = msg.channel_id.say(&ctx.http, "Pong!").await {
-                println!("Error sending message: {why:?}");
-            }
-        }
-    }
-
-    // Set a handler to be called on the `ready` event. This is called when a shard is booted, and
-    // a READY payload is sent by Discord. This payload contains data like the current user's guild
-    // Ids, current user data, private channels, and more.
-    //
-    // In this case, just print what the current user's username is.
-    async fn ready(&self, _: Context, ready: Ready) {
-        println!("{} is connected!", ready.user.name);
-    }
+/// Displays your or another user's account creation date
+#[poise::command(slash_command, prefix_command)]
+async fn age(
+    ctx: Context<'_>,
+    #[description = "Selected user"] user: Option<serenity::User>,
+) -> Result<(), Error> {
+    let u = user.as_ref().unwrap_or_else(|| ctx.author());
+    let response = format!("{}'s account was created at {}", u.name, u.created_at());
+    ctx.say(response).await?;
+    Ok(())
 }
 
 #[tokio::main]
@@ -51,10 +32,26 @@ async fn main() {
         | GatewayIntents::MESSAGE_CONTENT
         | GatewayIntents::GUILDS;
 
+    let framework = poise::Framework::<Data, Error>::builder()
+        .options(poise::FrameworkOptions {
+            commands: vec![
+                // Add commands here
+                age(),
+            ],
+            ..Default::default()
+        })
+        .setup(|_ctx, _ready, _framework| {
+            Box::pin(async move {
+                poise::builtins::register_globally(_ctx, &_framework.options().commands).await?;
+                Ok(Data {})
+            })
+        })
+        .build();
+
     // Create a new instance of the Client, logging in as a bot. This will automatically prepend
     // your bot token with "Bot ", which is a requirement by Discord for bot users.
     let mut client = Client::builder(&token, intents)
-        .event_handler(Handler)
+        .framework(framework)
         .await
         .expect("Err creating client");
 
