@@ -1,4 +1,5 @@
 use dotenv::dotenv;
+use serenity::model::guild;
 use std::env;
 
 use serenity::async_trait;
@@ -7,6 +8,7 @@ use serenity::model::gateway::Ready;
 use serenity::prelude::*;
 
 mod logger;
+mod util;
 struct Handler;
 
 #[async_trait]
@@ -16,7 +18,9 @@ impl EventHandler for Handler {
     // Event handlers are dispatched through a threadpool, and so multiple events can be
     // dispatched simultaneously.
     async fn message(&self, ctx: Context, msg: Message) {
-        logger::log_message(&msg.content, &msg.author.name, msg.channel_id.get());
+        let guild_result =
+            util::get_server_and_channel_name(&ctx, &msg.guild_id, &msg.channel_id).await;
+        logger::log_message(guild_result, &msg.content, &msg.author.name);
         if msg.content == "!ping" {
             // Sending a message can fail, due to a network error, an authentication error, or lack
             // of permissions to post in the channel, so log to stdout when some error happens,
@@ -46,7 +50,8 @@ async fn main() {
     // Set gateway intents, which decides what events the bot will be notified about
     let intents = GatewayIntents::GUILD_MESSAGES
         | GatewayIntents::DIRECT_MESSAGES
-        | GatewayIntents::MESSAGE_CONTENT;
+        | GatewayIntents::MESSAGE_CONTENT
+        | GatewayIntents::GUILDS;
 
     // Create a new instance of the Client, logging in as a bot. This will automatically prepend
     // your bot token with "Bot ", which is a requirement by Discord for bot users.
