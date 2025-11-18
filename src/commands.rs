@@ -19,27 +19,38 @@ fn get_codenamedata() -> Result<CodenameData, Error> {
     Ok(codenamedata)
 }
 
+/// Helper to send a text response and log it to the DB.
+async fn send_and_log(ctx: Context<'_>, response: String) -> Result<(), Error> {
+    ctx.say(response.clone()).await?;
+    let data = ctx.data();
+    let command_name = ctx.command().name.to_string();
+    crate::log_command_usage(&data.db_path, &ctx, &command_name, &response).await;
+    Ok(())
+}
+
 /// Registers application commands on discord
-#[poise::command(prefix_command)]
+#[poise::command(slash_command)]
 pub async fn register(ctx: Context<'_>) -> Result<(), Error> {
     poise::builtins::register_application_commands_buttons(ctx).await?;
+    let response = "Registered application commands".to_string();
+    send_and_log(ctx, response).await?;
     Ok(())
 }
 
 /// Displays your or another user's account creation date
-#[poise::command(slash_command, prefix_command)]
+#[poise::command(slash_command)]
 pub async fn age(
     ctx: Context<'_>,
     #[description = "Selected user"] user: Option<serenity::User>,
 ) -> Result<(), Error> {
     let u = user.as_ref().unwrap_or_else(|| ctx.author());
     let response = format!("{}'s account was created at {}", u.name, u.created_at());
-    ctx.say(response).await?;
+    send_and_log(ctx, response).await?;
     Ok(())
 }
 
 /// Generates and displays a random codename
-#[poise::command(slash_command, prefix_command)]
+#[poise::command(slash_command)]
 pub async fn codename(
     ctx: Context<'_>,
     #[description = "get a new codename"] _test: Option<String>,
@@ -47,7 +58,7 @@ pub async fn codename(
     let codename_data = get_codenamedata()?;
     let codename = generate_codename(&codename_data)?;
     let response = format!("Your generated codename is: {}", codename);
-    ctx.say(response).await?;
+    send_and_log(ctx, response).await?;
     Ok(())
 }
 
