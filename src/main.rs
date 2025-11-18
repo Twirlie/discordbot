@@ -32,8 +32,13 @@ mod commands;
 
 /// ### Sets up the SQLite database and returns the DbData
 pub async fn db_setup() -> DbData {
+    db_setup_at("history.db").await
+}
+
+/// Variant of `db_setup` that writes to an explicit file path. Useful for tests.
+pub async fn db_setup_at(path: &str) -> DbData {
     println!("{}", "Setting up the database...".green());
-    let db = Connection::open("history.db").expect("Failed to open SQLite DB");
+    let db = Connection::open(path).expect("Failed to open SQLite DB");
 
     match db.execute_batch(
         "
@@ -54,6 +59,7 @@ pub async fn db_setup() -> DbData {
     DbData { db }
 }
 
+/// ### Logs command usage into the SQLite database
 async fn log_command_usage(
     db_path: &str,
     ctx: &poise::Context<'_, BotState, Error>,
@@ -75,16 +81,101 @@ async fn log_command_usage(
         .blue()
     );
     tokio::task::spawn_blocking(move || {
-        let conn = Connection::open(&db_path).expect("Failed to open SQLite DB");
-        let timestamp = chrono::Utc::now().timestamp();
-        conn.execute(
-            "INSERT INTO command_history (timestamp, user_id, username, command, output) VALUES (?1, ?2, ?3, ?4, ?5)",
-            rusqlite::params![timestamp, author_id, author_name, command_name, command_output],
+        insert_command_history_sync(
+            &db_path,
+            &author_id,
+            &author_name,
+            &command_name,
+            &command_output,
         )
         .expect("Failed to log command usage");
     })
     .await
     .ok();
+}
+
+// Crate-private helper that performs the DB insert synchronously. Extracted so tests
+// can call it directly without needing a `Context`.
+fn insert_command_history_sync(
+    db_path: &str,
+    author_id: &str,
+    author_name: &str,
+    command_name: &str,
+    command_output: &str,
+) -> rusqlite::Result<()> {
+    let conn = Connection::open(db_path)?;
+    let timestamp = chrono::Utc::now().timestamp();
+    conn.execute(
+        "INSERT INTO command_history (timestamp, user_id, username, command, output) VALUES (?1, ?2, ?3, ?4, ?5)",
+        rusqlite::params![timestamp, author_id, author_name, command_name, command_output],
+    )?;
+    Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use tempfile::NamedTempFile;
+
+    #[tokio::test]
+    async fn test_db_setup_creates_table() {
+        let tmp = NamedTempFile::new().expect("create temp file");
+        let path = tmp.path().to_str().expect("path to str");
+
+        // Call the path-specific setup
+        let dbdata = db_setup_at(path).await;
+
+        // Verify the table exists
+        let mut stmt = dbdata
+            .db
+            .prepare("SELECT count(name) FROM sqlite_master WHERE type='table' AND name='command_history';")
+            .expect("prepare stmt");
+        let count: i64 = stmt.query_row([], |r| r.get(0)).expect("query row");
+        assert_eq!(count, 1, "command_history table should exist");
+    }
+
+    #[tokio::test]
+    async fn test_log_command_usage_inserts_row() {
+        let tmp = NamedTempFile::new().expect("create temp file");
+        let path = tmp.path().to_str().expect("path to str");
+
+        // Initialize schema
+        let _ = db_setup_at(path).await;
+
+        // Insert a test row using the sync helper
+        insert_command_history_sync(path, "42", "testuser", "testcmd", "ok").expect("insert");
+
+        // Open a connection and verify the inserted row exists
+        let conn = Connection::open(path).expect("open conn");
+        let mut stmt = conn
+            .prepare(
+                "SELECT user_id, username, command, output FROM command_history WHERE user_id = ?1",
+            )
+            .expect("prepare");
+        let mut rows = stmt.query(["42"]).expect("query");
+        let row = rows.next().expect("row").expect("row unwrap");
+        let user_id: String = row.get(0).expect("get user_id");
+        let username: String = row.get(1).expect("get username");
+        let command: String = row.get(2).expect("get command");
+        let output: String = row.get(3).expect("get output");
+
+        assert_eq!(user_id, "42");
+        assert_eq!(username, "testuser");
+        assert_eq!(command, "testcmd");
+        assert_eq!(output, "ok");
+    }
+
+    #[tokio::test]
+    #[should_panic]
+    async fn test_db_setup_fails_on_directory_path() {
+        // Create a temporary directory and pass the directory path to db_setup_at.
+        // Opening a SQLite database at a path that is a directory should fail.
+        let tmpdir = tempfile::tempdir().expect("create temp dir");
+        let dir_path = tmpdir.path().to_str().expect("path to str");
+
+        // This should panic due to the underlying sqlite open/exec failing on a directory path
+        let _ = db_setup_at(dir_path).await;
+    }
 }
 
 #[tokio::main]
@@ -115,6 +206,9 @@ async fn main() {
                 poise::builtins::register_globally(_ctx, &_framework.options().commands).await?;
                 // Ensure the DB file and schema exist
                 db_setup().await;
+                println!("{}", "Framework setup complete.".cyan());
+                // Confirm everything finished and the bot is running
+                println!("{}", "Bot running.".green());
                 Ok(BotState {
                     db_path: "history.db".to_string(),
                 })
