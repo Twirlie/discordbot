@@ -6,17 +6,20 @@ use rand::seq::SliceRandom;
 use serde::Deserialize;
 
 #[derive(Deserialize)]
+/// Structure to hold codename data loaded from JSON
 struct CodenameData {
     animals: Vec<String>,
     adjectives: Vec<String>,
 }
 
+/// Loads codename data from the CodenameData.json file
 fn get_codenamedata() -> Result<CodenameData, Error> {
     let data: std::string::String = std::fs::read_to_string("./CodenameData.json")?;
     let codenamedata: CodenameData = serde_json::from_str(&data)?;
     Ok(codenamedata)
 }
 
+/// Registers application commands on discord
 #[poise::command(prefix_command)]
 pub async fn register(ctx: Context<'_>) -> Result<(), Error> {
     poise::builtins::register_application_commands_buttons(ctx).await?;
@@ -35,6 +38,7 @@ pub async fn age(
     Ok(())
 }
 
+/// Generates and displays a random codename
 #[poise::command(slash_command, prefix_command)]
 pub async fn codename(
     ctx: Context<'_>,
@@ -47,6 +51,7 @@ pub async fn codename(
     Ok(())
 }
 
+/// Generate a random codename from the provided CodenameData
 fn generate_codename(codename_data: &CodenameData) -> Result<String, String> {
     // randomly select an adjective and an animal from the provided data and concatenate them
     let mut rng = rand::rng();
