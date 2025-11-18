@@ -41,12 +41,7 @@ type Context<'a> = poise::Context<'a, BotState, Error>;
 mod commands;
 
 /// ### Sets up the SQLite database and returns the DbData
-pub async fn db_setup() -> DbData {
-    db_setup_at("history.db").await
-}
-
-/// Variant of `db_setup` that writes to an explicit file path. Useful for tests.
-pub async fn db_setup_at(path: &str) -> DbData {
+pub async fn db_setup(path: &str) -> DbData {
     println!("{}", "Setting up the database...".green());
     let db = Connection::open(path).expect("Failed to open SQLite DB");
 
@@ -158,7 +153,7 @@ mod tests {
         let path = tmp.path().to_str().expect("path to str");
 
         // Call the path-specific setup
-        let dbdata = db_setup_at(path).await;
+        let dbdata = db_setup(path).await;
 
         // Verify the table exists
         let mut stmt = dbdata
@@ -175,7 +170,7 @@ mod tests {
         let path = tmp.path().to_str().expect("path to str");
 
         // Initialize schema
-        let _ = db_setup_at(path).await;
+        let _ = db_setup(path).await;
 
         // Insert a test row using the sync helper
         insert_command_history_sync(path, "42", "testuser", "testcmd", "ok").expect("insert");
@@ -209,7 +204,7 @@ mod tests {
         let dir_path = tmpdir.path().to_str().expect("path to str");
 
         // This should panic due to the underlying sqlite open/exec failing on a directory path
-        let _ = db_setup_at(dir_path).await;
+        let _ = db_setup(dir_path).await;
     }
 
     #[tokio::test]
@@ -218,7 +213,7 @@ mod tests {
         let path = tmp.path().to_str().expect("path to str");
 
         // Initialize schema
-        let _ = db_setup_at(path).await;
+        let _ = db_setup(path).await;
 
         // Call the author-aware async helper to insert a row
         log_command_usage_with_author(path, "7", "asyncuser", "acmd", "done").await;
@@ -287,7 +282,7 @@ async fn main() {
                 .expect("spawn_blocking failed when loading codename data");
 
                 // Ensure the DB file and schema exist
-                db_setup().await;
+                db_setup("history.db").await;
                 println!("{}", "Framework setup complete.".cyan());
                 // Confirm everything finished and the bot is running
                 println!("{}", "Bot is running.".green());
