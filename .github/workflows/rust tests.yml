@@ -1,4 +1,4 @@
-name: Rust tests
+name: Rust CI
 
 on:
   push:
@@ -15,47 +15,34 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Checkout code
       - uses: actions/checkout@v4
 
-      # 2. Cache Rust dependencies
-      - name: Cache cargo registry
-        uses: actions/cache@v3
+      # Install Rust (maintained alternative to actions-rs/toolchain)
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      # Optional but recommended cache for faster builds
+      - name: Cache cargo registry + build
+        uses: actions/cache@v4
         with:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
-          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-cargo-registry-
+            target
+          key: rust-${{ hashFiles('**/Cargo.lock') }}
 
-      - name: Cache cargo build
-        uses: actions/cache@v3
-        with:
-          path: target
-          key: ${{ runner.os }}-cargo-build-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-cargo-build-
+      # Install tarpaulin manually (no archived actions)
+      - name: Install Tarpaulin
+        run: cargo install cargo-tarpaulin --locked
 
-      # 3. Install Rust toolchain
-      - name: Install Rust
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          profile: minimal
-          override: true
-
-      # 4. Run tests
       - name: Run tests
         run: cargo test --verbose
 
-      # 5. Run code coverage with Tarpaulin (XML + HTML)
+      # Generate XML + HTML coverage reports
       - name: Run coverage
-        uses: actions-rs/tarpaulin@v0.1
-        with:
-          args: --verbose --out Xml --out Html --output-dir coverage
+        run: cargo tarpaulin --verbose --out Xml --out Html --output-dir coverage
 
-      # 6. Upload coverage report as artifact
+      # Upload coverage report using newest maintained action
       - name: Upload coverage report
         uses: actions/upload-artifact@v4
         with:
