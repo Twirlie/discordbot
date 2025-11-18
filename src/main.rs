@@ -6,6 +6,7 @@
 use dotenvy::dotenv;
 use std::env;
 
+use colored::Colorize;
 use poise::serenity_prelude as serenity;
 use serenity::prelude::*;
 
@@ -31,7 +32,7 @@ mod commands;
 
 /// ### Sets up the SQLite database and returns the DbData
 pub async fn db_setup() -> DbData {
-    println!("Setting up the database...");
+    println!("{}", "Setting up the database...".green());
     let db = Connection::open("history.db").expect("Failed to open SQLite DB");
 
     match db.execute_batch(
@@ -46,8 +47,8 @@ pub async fn db_setup() -> DbData {
         );
     ",
     ) {
-        Ok(_) => println!("Database setup complete."),
-        Err(e) => eprintln!("Failed to set up database: {}", e),
+        Ok(_) => println!("{}", "Database setup complete.".green()),
+        Err(e) => panic!("Failed to set up database: {}", e),
     }
 
     DbData { db }
@@ -65,6 +66,14 @@ async fn log_command_usage(
     let command_output = command_output.clone();
     let author_id = ctx.author().id.to_string();
     let author_name = ctx.author().name.clone();
+    println!(
+        "{}",
+        format!(
+            "Logging command usage: user_id={}, username={}, command={}, output={}",
+            author_id, author_name, command_name, command_output
+        )
+        .blue()
+    );
     tokio::task::spawn_blocking(move || {
         let conn = Connection::open(&db_path).expect("Failed to open SQLite DB");
         let timestamp = chrono::Utc::now().timestamp();
@@ -83,7 +92,7 @@ async fn main() {
     dotenv().ok();
     // Configure the client with your Discord bot token in the environment.
     let token = env::var("DISCORD_TOKEN").expect("Expected a token in the environment");
-    println!("Bot starting...");
+    println!("{}", "Bot starting...".yellow());
     // Set gateway intents, which decides what events the bot will be notified about
     let intents = GatewayIntents::GUILD_MESSAGES
         | GatewayIntents::DIRECT_MESSAGES
@@ -101,7 +110,7 @@ async fn main() {
             ..Default::default()
         })
         .setup(|_ctx, _ready, _framework| {
-            println!("Running framework setup...");
+            println!("{}", "Running framework setup...".cyan());
             Box::pin(async move {
                 poise::builtins::register_globally(_ctx, &_framework.options().commands).await?;
                 // Ensure the DB file and schema exist
@@ -125,6 +134,6 @@ async fn main() {
     // Shards will automatically attempt to reconnect, and will perform exponential backoff until
     // it reconnects.
     if let Err(why) = client.start().await {
-        println!("Client error: {why:?}");
+        println!("{}", format!("Client error: {why:?}").red());
     }
 }
