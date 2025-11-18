@@ -80,6 +80,31 @@ async fn log_command_usage(
         )
         .blue()
     );
+    // Delegate to the author-aware helper so tests can exercise the same path
+    log_command_usage_with_author(
+        &db_path,
+        &author_id,
+        &author_name,
+        &command_name,
+        &command_output,
+    )
+    .await;
+}
+
+// Async helper that logs command usage for a given author. Extracted so tests can
+// call the same async path as `log_command_usage` without needing a `Context`.
+async fn log_command_usage_with_author(
+    db_path: &str,
+    author_id: &str,
+    author_name: &str,
+    command_name: &str,
+    command_output: &str,
+) {
+    let db_path = db_path.to_string();
+    let author_id = author_id.to_string();
+    let author_name = author_name.to_string();
+    let command_name = command_name.to_string();
+    let command_output = command_output.to_string();
     tokio::task::spawn_blocking(move || {
         insert_command_history_sync(
             &db_path,
@@ -175,6 +200,37 @@ mod tests {
 
         // This should panic due to the underlying sqlite open/exec failing on a directory path
         let _ = db_setup_at(dir_path).await;
+    }
+
+    #[tokio::test]
+    async fn test_log_command_usage_async_helper_inserts_row() {
+        let tmp = NamedTempFile::new().expect("create temp file");
+        let path = tmp.path().to_str().expect("path to str");
+
+        // Initialize schema
+        let _ = db_setup_at(path).await;
+
+        // Call the author-aware async helper to insert a row
+        log_command_usage_with_author(path, "7", "asyncuser", "acmd", "done").await;
+
+        // Verify row exists
+        let conn = Connection::open(path).expect("open conn");
+        let mut stmt = conn
+            .prepare(
+                "SELECT user_id, username, command, output FROM command_history WHERE user_id = ?1",
+            )
+            .expect("prepare");
+        let mut rows = stmt.query(["7"]).expect("query");
+        let row = rows.next().expect("row").expect("row unwrap");
+        let user_id: String = row.get(0).expect("get user_id");
+        let username: String = row.get(1).expect("get username");
+        let command: String = row.get(2).expect("get command");
+        let output: String = row.get(3).expect("get output");
+
+        assert_eq!(user_id, "7");
+        assert_eq!(username, "asyncuser");
+        assert_eq!(command, "acmd");
+        assert_eq!(output, "done");
     }
 }
 

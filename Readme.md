@@ -5,11 +5,13 @@
 * It includes commands to register application commands, display user account age, and generate random codenames.
 * It uses the `rusqlite` crate for SQLite interactions and `dotenvy` for environment variable management.
 
-## build, run, watch
+## build, run, watch, test
 
 * for reruning during development `cargo watch -x run`
 * for running manually `cargo run`
 * for building `cargo build`
+* for testing `cargo test`
+  * with tarpaulin: `cargo tarpaulin` or for and html file `cargo tarpaulin --out Html`
 
 ## features
 
