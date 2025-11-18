@@ -1,4 +1,4 @@
-name: Rust CI
+name: Rust tests
 
 on:
   push:
@@ -51,7 +51,7 @@ jobs:
 
       # 5. Run code coverage with Tarpaulin (XML + HTML)
       - name: Run coverage
-        uses: actions-rs/tarpaulin@v1
+        uses: actions-rs/tarpaulin@v0.1
         with:
           args: --verbose --out Xml --out Html --output-dir coverage
 
