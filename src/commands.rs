@@ -1,7 +1,6 @@
-use crate::CodenameData;
-use crate::{Context, Error};
+// CodenameData is defined in `main.rs` and referenced as `crate::CodenameData` where needed.
+use discordbot::{Context, Error, log_command_usage};
 use poise::serenity_prelude as serenity;
-use rand::prelude::IndexedRandom;
 #[allow(unused_imports)] // .choose() is used but it seems to think it's unused
 use rand::seq::SliceRandom;
 
@@ -10,7 +9,7 @@ async fn send_and_log(ctx: Context<'_>, response: String) -> Result<(), Error> {
     ctx.say(response.clone()).await?;
     let data = ctx.data();
     let command_name = ctx.command().name.to_string();
-    crate::log_command_usage(&data.db_path, &ctx, &command_name, &response).await;
+    log_command_usage(&data.db_path, &ctx, &command_name, &response).await;
     Ok(())
 }
 
@@ -51,17 +50,8 @@ pub async fn codename(
 }
 
 /// Generate a random codename from the provided CodenameData
-fn generate_codename(codename_data: &CodenameData) -> Result<String, String> {
-    // randomly select an adjective and an animal from the provided data and concatenate them
-    let mut rng = rand::rng();
-    if let (Some(adjective), Some(animal)) = (
-        codename_data.adjectives.choose(&mut rng),
-        codename_data.animals.choose(&mut rng),
-    ) {
-        Ok(format!("{} {}", adjective, animal))
-    } else {
-        Err("Codename generation failed".to_string())
-    }
+fn generate_codename(codename_data: &crate::CodenameData) -> Result<String, String> {
+    discordbot::generate_codename(codename_data)
 }
 
 #[cfg(test)]
