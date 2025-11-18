@@ -343,12 +343,13 @@ dependencies = [
 
 [[package]]
 name = "discordbot"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "anyhow",
  "chrono",
  "colored",
  "dotenvy",
+ "once_cell",
  "poise",
  "rand 0.9.2",
  "rusqlite",

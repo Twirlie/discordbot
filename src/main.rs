@@ -7,6 +7,7 @@ use dotenvy::dotenv;
 use std::env;
 
 use colored::Colorize;
+use once_cell::sync::OnceCell;
 use poise::serenity_prelude as serenity;
 use serenity::prelude::*;
 
@@ -16,6 +17,15 @@ use rusqlite::Connection;
 pub struct DbData {
     pub db: Connection,
 }
+
+#[derive(serde::Deserialize, Debug)]
+pub struct CodenameData {
+    pub animals: Vec<String>,
+    pub adjectives: Vec<String>,
+}
+
+/// Public global storing the codename data. Initialized during framework setup.
+pub static CODENAME_DATA: OnceCell<CodenameData> = OnceCell::new();
 
 // Setup State, Error and Context types
 /// ### Bot state, which is shared between commands
@@ -260,11 +270,27 @@ async fn main() {
             println!("{}", "Running framework setup...".cyan());
             Box::pin(async move {
                 poise::builtins::register_globally(_ctx, &_framework.options().commands).await?;
+                // Load codename data into the global once cell. Panic early if loading fails.
+                let codename_path = "./assets/CodenameData.json".to_string();
+                tokio::task::spawn_blocking(move || {
+                    println!("{}", "Loading codename data...".green());
+                    let data = std::fs::read_to_string(&codename_path)
+                        .expect("Failed to read CodenameData.json");
+                    let codenamedata: CodenameData =
+                        serde_json::from_str(&data).expect("Failed to parse CodenameData.json");
+                    CODENAME_DATA
+                        .set(codenamedata)
+                        .expect("CODENAME_DATA was already initialized");
+                    println!("{}", "Codename data loaded.".green());
+                })
+                .await
+                .expect("spawn_blocking failed when loading codename data");
+
                 // Ensure the DB file and schema exist
                 db_setup().await;
                 println!("{}", "Framework setup complete.".cyan());
                 // Confirm everything finished and the bot is running
-                println!("{}", "Bot running.".green());
+                println!("{}", "Bot is running.".green());
                 Ok(BotState {
                     db_path: "history.db".to_string(),
                 })

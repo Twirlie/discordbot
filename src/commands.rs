@@ -1,23 +1,9 @@
+use crate::CodenameData;
 use crate::{Context, Error};
 use poise::serenity_prelude as serenity;
 use rand::prelude::IndexedRandom;
 #[allow(unused_imports)] // .choose() is used but it seems to think it's unused
 use rand::seq::SliceRandom;
-use serde::Deserialize;
-
-#[derive(Deserialize)]
-/// Structure to hold codename data loaded from JSON
-struct CodenameData {
-    animals: Vec<String>,
-    adjectives: Vec<String>,
-}
-
-/// Loads codename data from the CodenameData.json file
-fn get_codenamedata() -> Result<CodenameData, Error> {
-    let data: std::string::String = std::fs::read_to_string("./CodenameData.json")?;
-    let codenamedata: CodenameData = serde_json::from_str(&data)?;
-    Ok(codenamedata)
-}
 
 /// Helper to send a text response and log it to the DB.
 async fn send_and_log(ctx: Context<'_>, response: String) -> Result<(), Error> {
@@ -55,8 +41,10 @@ pub async fn codename(
     ctx: Context<'_>,
     #[description = "get a new codename"] _test: Option<String>,
 ) -> Result<(), Error> {
-    let codename_data = get_codenamedata()?;
-    let codename = generate_codename(&codename_data)?;
+    let codename_data = crate::CODENAME_DATA
+        .get()
+        .expect("Codename data not initialized");
+    let codename = generate_codename(codename_data)?;
     let response = format!("Your generated codename is: {}", codename);
     send_and_log(ctx, response).await?;
     Ok(())
@@ -78,14 +66,13 @@ fn generate_codename(codename_data: &CodenameData) -> Result<String, String> {
 
 #[cfg(test)]
 mod tests {
-    use crate::commands::CodenameData;
     use crate::commands::generate_codename;
 
     #[test]
     fn test_codename_file_loaded() {
-        let data = std::fs::read_to_string("./CodenameData.json")
+        let data = std::fs::read_to_string("./assets/CodenameData.json")
             .expect("Failed to read CodenameData.json");
-        let animal_data: super::CodenameData =
+        let animal_data: crate::CodenameData =
             serde_json::from_str(&data).expect("Failed to parse JSON");
 
         assert!(
@@ -99,9 +86,9 @@ mod tests {
     }
     #[test]
     fn test_create_random_codename() {
-        let data: std::string::String = std::fs::read_to_string("./CodenameData.json")
+        let data: std::string::String = std::fs::read_to_string("./assets/CodenameData.json")
             .expect("failed to read CodenameData.json");
-        let codenamedata: CodenameData = serde_json::from_str(&data).expect("d");
+        let codenamedata: crate::CodenameData = serde_json::from_str(&data).expect("d");
         let codename: String = generate_codename(&codenamedata).unwrap();
         assert!(
             !codename.is_empty(),
