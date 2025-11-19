@@ -4,14 +4,26 @@ use once_cell::sync::OnceCell;
 // use rand directly for small helpers (use `rand::random` below)
 use rusqlite::Connection;
 
+// Formatting helpers for command responses (kept in the library so tests can import them
+// without constructing a `poise::Context`). These mirror the helpers used in
+// `src/commands.rs`.
+pub fn format_register_response() -> String {
+    "Registered application commands".to_string()
+}
+
+pub fn format_age_response(name: &str, created_at: &str) -> String {
+    format!("{}'s account was created at {}", name, created_at)
+}
+
+pub fn format_codename_response(codename: &str) -> String {
+    format!("Your generated codename is: {}", codename)
+}
+
 #[derive(serde::Deserialize, Debug)]
 pub struct CodenameData {
     pub animals: Vec<String>,
     pub adjectives: Vec<String>,
 }
-
-/// Public global storing the codename data. Initialized during framework setup.
-pub static CODENAME_DATA: OnceCell<CodenameData> = OnceCell::new();
 
 /// ### Database data structure
 pub struct DbData {
@@ -23,6 +35,9 @@ pub struct BotState {
     /// Path to the SQLite DB file (we open per-call to avoid sharing Connection across threads)
     pub db_path: String,
 }
+
+/// Public global storing the codename data. Initialized during framework setup.
+pub static CODENAME_DATA: OnceCell<CodenameData> = OnceCell::new();
 
 /// ### the Bot's Error type
 pub type Error = Box<dyn std::error::Error + Send + Sync>;
@@ -54,7 +69,7 @@ pub async fn db_setup(path: &str) -> DbData {
     DbData { db }
 }
 
-/// Async helper that logs command usage for a given author. Extracted so tests can
+/// Async function that logs command usage for a given author. Extracted so tests can
 /// call the same async path as `log_command_usage` without needing a `Context`.
 pub async fn log_command_usage_with_author(
     db_path: &str,
@@ -69,6 +84,7 @@ pub async fn log_command_usage_with_author(
     let command_name = command_name.to_string();
     let command_output = command_output.to_string();
     tokio::task::spawn_blocking(move || {
+        // Perform the synchronous DB insert in a blocking task
         insert_command_history_sync(
             &db_path,
             &author_id,
@@ -87,8 +103,8 @@ pub async fn log_command_usage_with_author(
 pub async fn log_command_usage(
     db_path: &str,
     ctx: &poise::Context<'_, BotState, Error>,
-    command_name: &String,
-    command_output: &String,
+    command_name: &str,
+    command_output: &str,
 ) {
     let author_id = ctx.author().id.to_string();
     let author_name = ctx.author().name.clone();
@@ -130,3 +146,6 @@ pub fn generate_codename(codename_data: &CodenameData) -> Result<String, String>
     let animal = &codename_data.animals[animal_index];
     Ok(format!("{} {}", adjective, animal))
 }
+
+// Tests were moved to `tests/lib_tests.rs` as integration-style tests.
+// Keep lightweight unit tests here only if they must access private items.

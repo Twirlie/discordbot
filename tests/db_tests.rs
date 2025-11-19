@@ -11,7 +11,9 @@ async fn db_setup_creates_table() {
 
     let mut stmt = dbdata
         .db
-        .prepare("SELECT count(name) FROM sqlite_master WHERE type='table' AND name='command_history';")
+        .prepare(
+            "SELECT count(name) FROM sqlite_master WHERE type='table' AND name='command_history';",
+        )
         .expect("prepare stmt");
     let count: i64 = stmt.query_row([], |r| r.get(0)).expect("query row");
     assert_eq!(count, 1, "command_history table should exist");

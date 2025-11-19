@@ -1,5 +1,8 @@
 // CodenameData is defined in `main.rs` and referenced as `crate::CodenameData` where needed.
-use discordbot::{Context, Error, log_command_usage};
+use discordbot::{
+    Context, Error, format_age_response, format_codename_response, format_register_response,
+    log_command_usage,
+};
 use poise::serenity_prelude as serenity;
 #[allow(unused_imports)] // .choose() is used but it seems to think it's unused
 use rand::seq::SliceRandom;
@@ -17,7 +20,7 @@ async fn send_and_log(ctx: Context<'_>, response: String) -> Result<(), Error> {
 #[poise::command(slash_command)]
 pub async fn register(ctx: Context<'_>) -> Result<(), Error> {
     poise::builtins::register_application_commands_buttons(ctx).await?;
-    let response = "Registered application commands".to_string();
+    let response = format_register_response();
     send_and_log(ctx, response).await?;
     Ok(())
 }
@@ -29,7 +32,7 @@ pub async fn age(
     #[description = "Selected user"] user: Option<serenity::User>,
 ) -> Result<(), Error> {
     let u = user.as_ref().unwrap_or_else(|| ctx.author());
-    let response = format!("{}'s account was created at {}", u.name, u.created_at());
+    let response = format_age_response(&u.name, &u.created_at().to_string());
     send_and_log(ctx, response).await?;
     Ok(())
 }
@@ -44,7 +47,7 @@ pub async fn codename(
         .get()
         .expect("Codename data not initialized");
     let codename = generate_codename(codename_data)?;
-    let response = format!("Your generated codename is: {}", codename);
+    let response = format_codename_response(&codename);
     send_and_log(ctx, response).await?;
     Ok(())
 }
