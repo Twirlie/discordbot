@@ -21,18 +21,18 @@ jobs:
     - name: Prepare release directory
       run: |
         mkdir release
-        cp target/release/mybot release/mybot
+        cp target/release/ release/
         cp -r assets release/assets
 
     - name: Create archive
       run: |
         cd release
-        zip -r ../mybot-${{ github.ref_name }}.zip .
+        zip -r ../${{ github.ref_name }}.zip .
         cd ..
 
     - name: Upload release asset
       uses: softprops/action-gh-release@v2
       with:
-        files: mybot-${{ github.ref_name }}.zip
+        files: ${{ github.ref_name }}.zip
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
