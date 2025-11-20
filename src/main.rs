@@ -5,6 +5,7 @@ use poise::serenity_prelude as serenity;
 use serenity::prelude::*;
 use std::env;
 mod commands;
+mod web;
 
 #[tokio::main]
 async fn main() {
@@ -72,6 +73,10 @@ async fn run_setup(
     discordbot::codename_data_setup_from_path("./assets/CodenameData.json").await;
     // Ensure the DB file and schema exist
     db_setup("history.db").await;
+    tokio::spawn(async move {
+        println!("{}", "Starting web server...".white().on_cyan());
+        web::setup_web_server("3000").await;
+    });
     println!("{}", "Framework setup complete.".white().on_cyan());
     // Confirm everything finished and the bot is running
     println!("{}", "Bot is running!".white().on_bright_magenta());
