@@ -2,8 +2,6 @@
 use discordbot::{
     Context, Error, format_codename_response, format_register_response, log_command_usage,
 };
-#[allow(unused_imports)] // .choose() is used but it seems to think it's unused
-use rand::seq::SliceRandom;
 
 /// Helper to send a text response and log it to the DB.
 async fn send_and_log(ctx: Context<'_>, response: String) -> Result<(), Error> {

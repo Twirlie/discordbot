@@ -1,17 +1,9 @@
-/// # Discord Bot with SQLite Command History Logging
-/// This Rust program implements a Discord bot using the `poise` framework and `serenity` library.
-/// It connects to Discord, registers slash commands, and logs command usage into a SQLite database.
-/// It includes commands to register application commands, display user account age, and generate random codenames.
-/// It uses the `rusqlite` crate for SQLite interactions and `dotenvy` for environment variable management.
-use dotenvy::dotenv;
-use std::env;
-
 use colored::Colorize;
+use discordbot::{BotState, CODENAME_DATA, CodenameData, Error, db_setup};
+use dotenvy::dotenv;
 use poise::serenity_prelude as serenity;
 use serenity::prelude::*;
-
-use discordbot::{BotState, CODENAME_DATA, CodenameData, Error, db_setup};
-
+use std::env;
 mod commands;
 
 #[tokio::main]

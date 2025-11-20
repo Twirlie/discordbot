@@ -1,12 +1,7 @@
 use colored::Colorize;
 use once_cell::sync::OnceCell;
-// poise serenity prelude not needed in library surface
-// use rand directly for small helpers (use `rand::random` below)
 use rusqlite::Connection;
 
-// Formatting helpers for command responses (kept in the library so tests can import them
-// without constructing a `poise::Context`). These mirror the helpers used in
-// `src/commands.rs`.
 pub fn format_register_response() -> String {
     "Registered application commands".to_string()
 }
