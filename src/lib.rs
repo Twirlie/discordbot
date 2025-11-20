@@ -43,7 +43,7 @@ pub type Context<'a> = poise::Context<'a, BotState, Error>;
 
 /// ### Sets up the SQLite database and returns the DbData
 pub async fn db_setup(path: &str) -> DbData {
-    println!("{}", "Setting up the database...".green());
+    println!("{}", "Setting up the database...".white().on_blue());
     let db = Connection::open(path).expect("Failed to open SQLite DB");
 
     match db.execute_batch(
@@ -58,7 +58,7 @@ pub async fn db_setup(path: &str) -> DbData {
         );
     ",
     ) {
-        Ok(_) => println!("{}", "Database setup complete.".green()),
+        Ok(_) => println!("{}", "Database setup complete.".white().on_blue()),
         Err(e) => panic!("Failed to set up database: {}", e),
     }
 
@@ -79,6 +79,14 @@ pub async fn log_command_usage_with_author(
     let author_name = author_name.to_string();
     let command_name = command_name.to_string();
     let command_output = command_output.to_string();
+    println!(
+        "{}",
+        format!(
+            "Logging command usage:\n  user_id={}\n  username={}\n  command={}",
+            author_id, author_name, command_name
+        )
+        .white()
+    );
     tokio::task::spawn_blocking(move || {
         // Perform the synchronous DB insert in a blocking task
         insert_command_history_sync(
@@ -178,4 +186,23 @@ mod tests {
         // unicode character
         assert_eq!(capitalize_first("äbc"), "Äbc");
     }
+}
+
+/// Load codename data from a JSON file into the global `CODENAME_DATA` OnceCell.
+/// This is the crate-public version so tests and the binary can call it.
+pub async fn codename_data_setup_from_path(path: &str) {
+    let codename_path = path.to_string();
+    tokio::task::spawn_blocking(move || {
+        println!("{}", "Loading codename data...".white().on_green());
+        let data =
+            std::fs::read_to_string(&codename_path).expect("Failed to read CodenameData.json");
+        let codenamedata: CodenameData =
+            serde_json::from_str(&data).expect("Failed to parse CodenameData.json");
+        CODENAME_DATA
+            .set(codenamedata)
+            .expect("CODENAME_DATA was already initialized");
+        println!("{}", "Codename data loaded.".white().on_green());
+    })
+    .await
+    .expect("spawn_blocking failed when loading codename data");
 }
