@@ -36,12 +36,12 @@ fn generate_codename_errors_on_empty_parts() {
 #[test]
 fn generate_codename_returns_ok_for_valid_data() {
     let data = CodenameData {
-        animals: vec!["fox".to_string()],
-        adjectives: vec!["quick".to_string()],
+        animals: vec!["Fox".to_string()],
+        adjectives: vec!["Quick".to_string()],
     };
     let res = generate_codename(&data).expect("should generate");
-    assert!(res.contains("quick"));
-    assert!(res.contains("fox"));
+    assert!(res.contains("Quick"));
+    assert!(res.contains("Fox"));
 }
 
 // Simple property-style test: generate multiple codenames and ensure they are non-empty

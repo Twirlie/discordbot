@@ -11,12 +11,8 @@ pub fn format_register_response() -> String {
     "Registered application commands".to_string()
 }
 
-pub fn format_age_response(name: &str, created_at: &str) -> String {
-    format!("{}'s account was created at {}", name, created_at)
-}
-
 pub fn format_codename_response(codename: &str) -> String {
-    format!("Your generated codename is: {}", codename)
+    format!("Your generated codename is:\n **{}!**", codename)
 }
 
 #[derive(serde::Deserialize, Debug)]
@@ -106,12 +102,10 @@ pub async fn log_command_usage(
     command_name: &str,
     command_output: &str,
 ) {
-    let author_id = ctx.author().id.to_string();
-    let author_name = ctx.author().name.clone();
     log_command_usage_with_author(
         db_path,
-        &author_id,
-        &author_name,
+        &ctx.author().id.to_string(),
+        &ctx.author().name,
         command_name,
         command_output,
     )
@@ -136,6 +130,7 @@ pub fn insert_command_history_sync(
     Ok(())
 }
 
+/// Generate a random codename for the codename command
 pub fn generate_codename(codename_data: &CodenameData) -> Result<String, String> {
     if codename_data.adjectives.is_empty() || codename_data.animals.is_empty() {
         return Err("Codename generation failed".to_string());
@@ -144,8 +139,43 @@ pub fn generate_codename(codename_data: &CodenameData) -> Result<String, String>
     let animal_index = (rand::random::<u64>() as usize) % codename_data.animals.len();
     let adjective = &codename_data.adjectives[adj_index];
     let animal = &codename_data.animals[animal_index];
-    Ok(format!("{} {}", adjective, animal))
+    Ok(format!(
+        "{} {}",
+        capitalize_first(adjective),
+        capitalize_first(animal)
+    ))
 }
 
-// Tests were moved to `tests/lib_tests.rs` as integration-style tests.
-// Keep lightweight unit tests here only if they must access private items.
+fn capitalize_first(s: &str) -> String {
+    let mut c = s.chars();
+    match c.next() {
+        None => String::new(),
+        Some(first) => first.to_uppercase().collect::<String>() + c.as_str(),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_capitalize_first() {
+        // normal lowercase
+        assert_eq!(capitalize_first("hello"), "Hello");
+
+        // already capitalized
+        assert_eq!(capitalize_first("World"), "World");
+
+        // empty string
+        assert_eq!(capitalize_first(""), "");
+
+        // single character
+        assert_eq!(capitalize_first("a"), "A");
+
+        // multiple words (only first letter capitalized)
+        assert_eq!(capitalize_first("rust language"), "Rust language");
+
+        // unicode character
+        assert_eq!(capitalize_first("äbc"), "Äbc");
+    }
+}

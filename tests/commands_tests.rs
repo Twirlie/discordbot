@@ -1,6 +1,5 @@
 use discordbot::{
-    CodenameData, format_age_response, format_codename_response, format_register_response,
-    generate_codename,
+    CodenameData, format_codename_response, format_register_response, generate_codename,
 };
 
 #[test]
@@ -39,13 +38,6 @@ fn register_response_format() {
         format_register_response(),
         "Registered application commands"
     );
-}
-
-#[test]
-fn age_response_format() {
-    let s = format_age_response("Alice", "2020-01-01T00:00:00Z");
-    assert!(s.contains("Alice"));
-    assert!(s.contains("2020-01-01T00:00:00Z"));
 }
 
 #[test]

@@ -1,9 +1,7 @@
 // CodenameData is defined in `main.rs` and referenced as `crate::CodenameData` where needed.
 use discordbot::{
-    Context, Error, format_age_response, format_codename_response, format_register_response,
-    log_command_usage,
+    Context, Error, format_codename_response, format_register_response, log_command_usage,
 };
-use poise::serenity_prelude as serenity;
 #[allow(unused_imports)] // .choose() is used but it seems to think it's unused
 use rand::seq::SliceRandom;
 
@@ -25,24 +23,12 @@ pub async fn register(ctx: Context<'_>) -> Result<(), Error> {
     Ok(())
 }
 
-/// Displays your or another user's account creation date
-#[poise::command(slash_command)]
-pub async fn age(
-    ctx: Context<'_>,
-    #[description = "Selected user"] user: Option<serenity::User>,
-) -> Result<(), Error> {
-    let u = user.as_ref().unwrap_or_else(|| ctx.author());
-    let response = format_age_response(&u.name, &u.created_at().to_string());
-    send_and_log(ctx, response).await?;
-    Ok(())
-}
-
 /// Generates and displays a random codename
-#[poise::command(slash_command)]
-pub async fn codename(
-    ctx: Context<'_>,
-    #[description = "get a new codename"] _test: Option<String>,
-) -> Result<(), Error> {
+#[poise::command(
+    slash_command,
+    description_localized("en-US", "Generates a random codename")
+)]
+pub async fn codename(ctx: Context<'_>) -> Result<(), Error> {
     let codename_data = crate::CODENAME_DATA
         .get()
         .expect("Codename data not initialized");

@@ -31,7 +31,6 @@ async fn main() {
             commands: vec![
                 // Add commands here
                 commands::register(),
-                commands::age(),
                 commands::codename(),
             ],
             ..Default::default()
