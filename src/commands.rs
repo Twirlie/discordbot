@@ -3,12 +3,29 @@ use discordbot::{
     BotError, Context, format_codename_response, format_register_response, log_command_usage,
 };
 
-/// Helper to send a text response and log it to the DB.
+/// Helper to send a text response and log it to the DB and broadcast to WebSocket clients.
 async fn send_and_log(ctx: Context<'_>, response: String) -> Result<(), BotError> {
     ctx.say(response.clone()).await?;
     let data = ctx.data();
     let command_name = ctx.command().name.to_string();
+    let author_id = ctx.author().id.to_string();
+    let author_name = ctx.author().name.clone();
+
+    // Log to database
     log_command_usage(&data.db_path, &ctx, &command_name, &response).await;
+
+    // Broadcast to WebSocket clients
+    let feed_item = crate::web::FeedItem {
+        item_uuid: uuid::Uuid::new_v4().to_string(),
+        timestamp: chrono::Utc::now().to_rfc3339(),
+        author_id,
+        author_name,
+        command_name,
+        command_output: response,
+        test_item: false,
+    };
+    crate::web::broadcast_command_usage(feed_item);
+
     Ok(())
 }
 

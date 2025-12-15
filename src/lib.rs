@@ -2,6 +2,8 @@ use colored::Colorize;
 use once_cell::sync::OnceCell;
 use rusqlite::Connection;
 
+pub mod web;
+
 pub fn format_register_response() -> String {
     "Registered application commands".to_string()
 }

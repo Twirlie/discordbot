@@ -2,11 +2,13 @@
   import type { FeedItem } from "../lib/types";
   import { slide } from "svelte/transition";
 
-
+  export let item_uuid: FeedItem["item_uuid"];
+  export let timestamp: FeedItem["timestamp"];
   export let author_id: FeedItem["author_id"];
   export let author_name: FeedItem["author_name"];
   export let command_name: FeedItem["command_name"];
   export let command_output: FeedItem["command_output"];
+  export let test_item: FeedItem["test_item"];
 </script>
 
 <div class="feeditem" in:slide={{ duration: 200, axis: 'x'}}>
@@ -17,5 +19,17 @@
     </svg>
   </div>
   <p class="feeditem-author mt-1">Executed by: {author_name} (ID: {author_id})</p>
+  <p class="feeditem-timestamp">At: {new Date(timestamp).toLocaleString()}</p>
   <pre class="feeditem-output">{command_output}</pre>
+  {#if test_item}
+  <div class="feeditem-testitem-warning">
+    <div class="flex items-center gap-2">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6 warning-icon">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+      </svg>
+      <p class="feeditem-testitem-label">Warning! this is a placeholder component and doesn't represent real data!</p>
+    </div>
+    <p class="feeditem-uuid mt-2">{item_uuid}</p>
+  </div>
+  {/if}
 </div>
