@@ -1,9 +1,10 @@
 # Discord Bot
 
 * This Rust program implements a Discord bot using the `poise` framework and `serenity` library.
-* It connects to Discord, registers slash commands, and logs command usage into a SQLite database.
-* It includes commands to register application commands, display user account age, and generate random codenames.
-* It uses the `rusqlite` crate for SQLite interactions and `dotenvy` for environment variable management.
+* connects to Discord, registers slash commands, and logs command usage into a SQLite database.
+* includes commands to register application commands, display user account age, and generate random codenames.
+* uses the `rusqlite` crate for SQLite interactions and `dotenvy` for environment variable management.
+* has a web frontend built in rust for displaying command usage in realtime
 
 ## build, run, watch, test
 
@@ -20,5 +21,4 @@
 commands are implemented as slash commands.
 
 1) `/codename` generates a random codename
-2) `/age` *temporary* returns age of your discord account
-3) `/register` *admin use* manually register slash commands
+2) `/register` *admin use* manually register slash commands
