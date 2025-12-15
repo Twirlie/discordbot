@@ -48,6 +48,7 @@ body {
 .feeditem-command {
   @apply font-bold text-lg;
 }
+
 .feeditem-output {
   @apply mt-2 p-4 bg-stone-200 rounded;
 }
@@ -58,4 +59,12 @@ body {
 
 .botfeed-testing-note {
   @apply bg-yellow-200 border-l-4 border-yellow-500 text-yellow-800 p-4 mb-6 text-center;
+}
+
+.notification-icon {
+  @apply inline-block w-6 h-6 mr-2 align-middle;
+}
+
+.feeditem-icon {
+  @apply inline-block w-5 h-5 mr-2 align-middle;
 }
