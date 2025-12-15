@@ -1,5 +1,5 @@
 use colored::Colorize;
-use discordbot::{BotState, CODENAME_DATA, CodenameData, Error, db_setup};
+use discordbot::{BotError, BotState, CODENAME_DATA, CodenameData, db_setup};
 use dotenvy::dotenv;
 use poise::serenity_prelude as serenity;
 use serenity::prelude::*;
@@ -19,7 +19,7 @@ async fn main() {
         | GatewayIntents::MESSAGE_CONTENT
         | GatewayIntents::GUILDS;
 
-    let framework = poise::Framework::<BotState, Error>::builder()
+    let framework = poise::Framework::<BotState, BotError>::builder()
         .options(poise::FrameworkOptions {
             commands: vec![
                 // Add commands here
@@ -65,8 +65,8 @@ async fn main() {
 async fn run_setup(
     ctx: &Context,
     _ready: &serenity::Ready,
-    _framework: &poise::Framework<BotState, Error>,
-) -> Result<BotState, Error> {
+    _framework: &poise::Framework<BotState, BotError>,
+) -> Result<BotState, BotError> {
     // Register application commands globally
     poise::builtins::register_globally(ctx, &_framework.options().commands).await?;
     //load codename data

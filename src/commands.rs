@@ -1,10 +1,10 @@
 // CodenameData is defined in `main.rs` and referenced as `crate::CodenameData` where needed.
 use discordbot::{
-    Context, Error, format_codename_response, format_register_response, log_command_usage,
+    BotError, Context, format_codename_response, format_register_response, log_command_usage,
 };
 
 /// Helper to send a text response and log it to the DB.
-async fn send_and_log(ctx: Context<'_>, response: String) -> Result<(), Error> {
+async fn send_and_log(ctx: Context<'_>, response: String) -> Result<(), BotError> {
     ctx.say(response.clone()).await?;
     let data = ctx.data();
     let command_name = ctx.command().name.to_string();
@@ -14,7 +14,7 @@ async fn send_and_log(ctx: Context<'_>, response: String) -> Result<(), Error> {
 
 /// Registers application commands on discord
 #[poise::command(slash_command)]
-pub async fn register(ctx: Context<'_>) -> Result<(), Error> {
+pub async fn register(ctx: Context<'_>) -> Result<(), BotError> {
     poise::builtins::register_application_commands_buttons(ctx).await?;
     let response = format_register_response();
     send_and_log(ctx, response).await?;
@@ -26,7 +26,7 @@ pub async fn register(ctx: Context<'_>) -> Result<(), Error> {
     slash_command,
     description_localized("en-US", "Generates a random codename")
 )]
-pub async fn codename(ctx: Context<'_>) -> Result<(), Error> {
+pub async fn codename(ctx: Context<'_>) -> Result<(), BotError> {
     let codename_data = crate::CODENAME_DATA
         .get()
         .expect("Codename data not initialized");

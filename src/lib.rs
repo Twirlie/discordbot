@@ -31,10 +31,10 @@ pub struct BotState {
 pub static CODENAME_DATA: OnceCell<CodenameData> = OnceCell::new();
 
 /// ### the Bot's Error type
-pub type Error = Box<dyn std::error::Error + Send + Sync>;
+pub type BotError = Box<dyn std::error::Error + Send + Sync>;
 
 /// ### The Bot's Context type
-pub type Context<'a> = poise::Context<'a, BotState, Error>;
+pub type Context<'a> = poise::Context<'a, BotState, BotError>;
 
 /// ### Sets up the SQLite database and returns the DbData
 pub async fn db_setup(path: &str) -> DbData {
@@ -101,7 +101,7 @@ pub async fn log_command_usage_with_author(
 /// to `log_command_usage_with_author`.
 pub async fn log_command_usage(
     db_path: &str,
-    ctx: &poise::Context<'_, BotState, Error>,
+    ctx: &poise::Context<'_, BotState, BotError>,
     command_name: &str,
     command_output: &str,
 ) {

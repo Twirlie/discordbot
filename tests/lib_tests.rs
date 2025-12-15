@@ -8,7 +8,7 @@ fn codename_data_oncecell_is_empty_by_default() {
 
 #[test]
 fn error_and_context_aliases_compile() {
-    let _ = std::any::type_name::<discordbot::Error>();
+    let _ = std::any::type_name::<discordbot::BotError>();
     let _ = std::any::type_name::<discordbot::Context<'static>>();
 }
 
