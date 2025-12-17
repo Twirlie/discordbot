@@ -25,6 +25,7 @@ async fn main() {
                 // Add commands here
                 commands::register(),
                 commands::codename(),
+                commands::avatar(),
             ],
             ..Default::default()
         })

@@ -2,6 +2,8 @@
 use discordbot::{
     BotError, Context, format_codename_response, format_register_response, log_command_usage,
 };
+use poise::serenity_prelude as serenity;
+use serenity::prelude::*;
 
 /// Helper to send a text response and log it to the DB and broadcast to WebSocket clients.
 async fn send_and_log(ctx: Context<'_>, response: String) -> Result<(), BotError> {
@@ -50,6 +52,20 @@ pub async fn codename(ctx: Context<'_>) -> Result<(), BotError> {
     let codename = generate_codename(codename_data)?;
     let response = format_codename_response(&codename);
     send_and_log(ctx, response).await?;
+    Ok(())
+}
+
+#[poise::command(prefix_command, slash_command)]
+pub async fn avatar(ctx: Context<'_>, user: serenity::User, mention: bool) -> Result<(), BotError> {
+    let url = user
+        .avatar_url()
+        .unwrap_or_else(|| user.default_avatar_url());
+    if mention {
+        let response = format!("{}'s avatar: {}", user.mention(), url);
+        send_and_log(ctx, response).await?;
+    } else {
+        send_and_log(ctx, url).await?;
+    }
     Ok(())
 }
 

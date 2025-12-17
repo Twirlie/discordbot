@@ -4,7 +4,7 @@
 * connects to Discord, registers slash commands, and logs command usage into a SQLite database.
 * includes commands to register application commands, display user account age, and generate random codenames.
 * uses the `rusqlite` crate for SQLite interactions and `dotenvy` for environment variable management.
-* has a web frontend built in rust for displaying command usage in realtime
+* has a web frontend built in Svelte for displaying command usage in realtime
 
 ## build, run, watch, test
 
