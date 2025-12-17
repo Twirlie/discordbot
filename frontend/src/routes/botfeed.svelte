@@ -7,7 +7,7 @@
   import { onMount } from "svelte";
   
   const BOTFEED_MAX_ITEMS = 50;
-  let testing = false;
+  let testing = true; // set to true to enable testing buttons
   let ws: WebSocket | null = null;
   let wsConnected = false;
 
@@ -22,7 +22,7 @@
       author_id: faker.number.int().toString(),
       author_name: faker.internet.username(),
       command_name: faker.hacker.verb() + " " + faker.hacker.noun(),
-      command_output: faker.lorem.sentence(),
+      command_output: faker.lorem.sentence(30),
       test_item: true
     };
   };

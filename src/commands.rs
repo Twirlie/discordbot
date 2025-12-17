@@ -55,6 +55,7 @@ pub async fn codename(ctx: Context<'_>) -> Result<(), BotError> {
     Ok(())
 }
 
+/// Displays the avatar URL of the specified user
 #[poise::command(prefix_command, slash_command)]
 pub async fn avatar(ctx: Context<'_>, user: serenity::User, mention: bool) -> Result<(), BotError> {
     let url = user

@@ -50,7 +50,7 @@ body {
 }
 
 .feeditem-output {
-  @apply mt-2 p-4 bg-stone-200 rounded;
+  @apply mt-2 p-4 bg-stone-200 rounded whitespace-normal wrap-break-word;
 }
 
 .botfeed-button-test {
