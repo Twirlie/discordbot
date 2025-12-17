@@ -1,0 +1,56 @@
+# Build stage
+FROM rust:latest AS builder
+
+RUN apt-get update && apt-get install -y \
+    curl \
+    git \
+    build-essential \
+    pkg-config \
+    libssl-dev \
+    npm \
+    nodejs \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN npm install -g npm@latest
+
+WORKDIR /app
+
+# Copy frontend source code
+COPY frontend/src ./frontend/src
+COPY frontend/static ./frontend/static
+COPY frontend/svelte.config.js ./frontend/svelte.config.js
+COPY frontend/package.json ./frontend/package.json
+COPY frontend/package-lock.json ./frontend/package-lock.json
+COPY frontend/tsconfig.json ./frontend/tsconfig.json
+COPY frontend/vite.config.ts ./frontend/vite.config.ts
+
+# Copy Rust Files
+COPY build.rs ./build.rs
+COPY Cargo.toml ./Cargo.toml
+COPY Cargo.lock ./Cargo.lock
+COPY src ./src
+
+RUN cd frontend && npm install
+RUN cd ../
+
+# Build the Rust app (this will trigger build.rs which uses the built frontend)
+RUN cargo build --release
+
+# Runtime stage
+FROM debian:bookworm-slim
+
+RUN apt-get update && apt-get install -y \
+    ca-certificates \
+    libssl3 \
+    && rm -rf /var/lib/apt/lists/*
+
+
+WORKDIR /prod
+
+EXPOSE 3000
+
+COPY assets /prod/assets
+COPY --from=builder /app//frontend/build /prod/frontend/build
+COPY --from=builder /app/target/release/discordbot /prod/discordbot
+
+CMD ["/prod/discordbot"]

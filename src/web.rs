@@ -82,10 +82,10 @@ async fn handle_socket(socket: WebSocket) {
 
     while let Ok(feed_item) = rx.recv().await {
         if let Ok(json_msg) = serde_json::to_string(&feed_item) {
-            if sender
+            &&sender
                 .send(axum::extract::ws::Message::Text(json_msg.into()))
                 .await
-                .is_err()
+                .is_err();
             {
                 break;
             }

@@ -1,0 +1,51 @@
+{
+  "name": "discordbot",
+  "dockerFile": "../Dockerfile",
+  "context": "..",
+
+  "workspaceFolder": "/workspaces/discordbot",
+
+  "forwardPorts": [3000, 3001],
+  "portsAttributes": {
+    "3001": {
+      "label": "Svelte Dev Server",
+      "onAutoForward": "notify"
+    },
+    "3000": {
+      "label": "Main Web Server",
+      "onAutoForward": "notify"
+    }
+  },
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "rust-lang.rust-analyzer",
+        "vadimcn.vscode-lldb",
+        "svelte.svelte-vscode",
+        "esbenp.prettier-vscode",
+        "dbaeumer.vscode-eslint",
+        "charliermarsh.ruff"
+      ],
+      "settings": {
+        "rust-analyzer.check.command": "clippy",
+        "[rust]": {
+          "editor.defaultFormatter": "rust-lang.rust-analyzer",
+          "editor.formatOnSave": true
+        },
+        "[svelte]": {
+          "editor.defaultFormatter": "esbenp.prettier-vscode",
+          "editor.formatOnSave": true
+        },
+        "files.exclude": {
+          "**/target": true,
+          "**/node_modules": true
+        }
+      }
+    }
+  },
+  "postCreateCommand": "git config core.filemode false",
+
+  "remoteUser": "root",
+  "remoteEnv": {}
+}
