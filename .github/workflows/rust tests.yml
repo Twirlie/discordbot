@@ -27,6 +27,16 @@ jobs:
         with:
           node-version: 'lts/*'
 
+      # Install pnpm
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
+      # Install frontend dependencies
+      - name: Install frontend dependencies
+        run: pnpm install --filter frontend
+
       # Optional but recommended cache for faster builds
       - name: Cache cargo registry + build
         uses: actions/cache@v4

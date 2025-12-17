@@ -15,13 +15,26 @@ jobs:
     - name: Install Rust
       uses: dtolnay/rust-toolchain@stable
 
+    - name: Install Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: 'lts/*'
+
+    - name: Install pnpm
+      uses: pnpm/action-setup@v2
+      with:
+        version: 8
+
+    - name: Install frontend dependencies
+      run: pnpm install --filter frontend
+
     - name: Build release
       run: cargo build --release
 
     - name: Prepare release directory
       run: |
         mkdir release
-        cp target/release/ release/
+        cp -r target/release/ release/
         cp -r assets release/assets
 
     - name: Create archive
