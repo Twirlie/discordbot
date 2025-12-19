@@ -72,20 +72,24 @@ async fn websocket_handler(ws: WebSocketUpgrade) -> Result<Response, StatusCode>
 
 /// Handles a WebSocket connection and broadcasts command events to the client
 async fn handle_socket(socket: WebSocket) {
+    // Split the WebSocket into a sender and receiver
     let (mut sender, _receiver) = socket.split();
+    // Get the broadcast channel sender, or return if it doesn't exist
     let tx = match COMMAND_TX.get() {
         Some(tx) => tx.clone(),
         None => return,
     };
 
+    // Subscribe to the broadcast channel and send messages to the client
     let mut rx = tx.subscribe();
 
+    // Send messages to the client until the connection is closed
     while let Ok(feed_item) = rx.recv().await {
         if let Ok(json_msg) = serde_json::to_string(&feed_item) {
-            &&sender
+            if sender
                 .send(axum::extract::ws::Message::Text(json_msg.into()))
                 .await
-                .is_err();
+                .is_err()
             {
                 break;
             }

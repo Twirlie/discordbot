@@ -159,6 +159,25 @@ fn capitalize_first(s: &str) -> String {
     }
 }
 
+/// Load codename data from a JSON file into the global `CODENAME_DATA` OnceCell.
+/// This is the crate-public version so tests and the binary can call it.
+pub async fn codename_data_setup_from_path(path: &str) {
+    let codename_path = path.to_string();
+    tokio::task::spawn_blocking(move || {
+        println!("{}", "Loading codename data...".white().on_green());
+        let data =
+            std::fs::read_to_string(&codename_path).expect("Failed to read CodenameData.json");
+        let codenamedata: CodenameData =
+            serde_json::from_str(&data).expect("Failed to parse CodenameData.json");
+        CODENAME_DATA
+            .set(codenamedata)
+            .expect("CODENAME_DATA was already initialized");
+        println!("{}", "Codename data loaded.".white().on_green());
+    })
+    .await
+    .expect("spawn_blocking failed when loading codename data");
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -183,23 +202,4 @@ mod tests {
         // unicode character
         assert_eq!(capitalize_first("äbc"), "Äbc");
     }
-}
-
-/// Load codename data from a JSON file into the global `CODENAME_DATA` OnceCell.
-/// This is the crate-public version so tests and the binary can call it.
-pub async fn codename_data_setup_from_path(path: &str) {
-    let codename_path = path.to_string();
-    tokio::task::spawn_blocking(move || {
-        println!("{}", "Loading codename data...".white().on_green());
-        let data =
-            std::fs::read_to_string(&codename_path).expect("Failed to read CodenameData.json");
-        let codenamedata: CodenameData =
-            serde_json::from_str(&data).expect("Failed to parse CodenameData.json");
-        CODENAME_DATA
-            .set(codenamedata)
-            .expect("CODENAME_DATA was already initialized");
-        println!("{}", "Codename data loaded.".white().on_green());
-    })
-    .await
-    .expect("spawn_blocking failed when loading codename data");
 }
