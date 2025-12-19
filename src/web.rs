@@ -1,29 +1,19 @@
+use crate::FeedItem;
+
+use crate::websocket::handle_socket_primary;
+use crate::websocket::init_command_broadcast;
 use axum::{
     Router,
     body::Body,
-    extract::ws::{WebSocket, WebSocketUpgrade},
+    extract::ws::WebSocketUpgrade,
     http::{Request, StatusCode, header},
     middleware::{self, Next},
     response::Response,
     routing::get,
 };
 use colored::Colorize;
-use poise::futures_util::{SinkExt, StreamExt};
-use serde::{Deserialize, Serialize};
 use tokio::sync::broadcast;
 use tower_http::services::ServeDir;
-
-/// FeedItem represents a Discord command usage event
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct FeedItem {
-    pub item_uuid: String,
-    pub timestamp: String,
-    pub author_id: String,
-    pub author_name: String,
-    pub command_name: String,
-    pub command_output: String,
-    pub test_item: bool,
-}
 
 /// Global broadcast channel for command usage events
 pub static COMMAND_TX: once_cell::sync::OnceCell<broadcast::Sender<FeedItem>> =
@@ -48,6 +38,9 @@ pub async fn setup_web_server(port: &str) {
 
     let service = ServeDir::new("./frontend/build");
 
+    // Initialize the broadcast channel
+    init_command_broadcast();
+
     let app = Router::new()
         .route("/ws/feed", get(websocket_handler))
         .fallback_service(service)
@@ -67,41 +60,7 @@ pub async fn setup_web_server(port: &str) {
 
 /// WebSocket handler for the feed endpoint
 async fn websocket_handler(ws: WebSocketUpgrade) -> Result<Response, StatusCode> {
-    Ok(ws.on_upgrade(handle_socket))
-}
-
-/// Handles a WebSocket connection and broadcasts command events to the client
-async fn handle_socket(socket: WebSocket) {
-    // Split the WebSocket into a sender and receiver
-    let (mut sender, _receiver) = socket.split();
-    // Get the broadcast channel sender, or return if it doesn't exist
-    let tx = match COMMAND_TX.get() {
-        Some(tx) => tx.clone(),
-        None => return,
-    };
-
-    // Subscribe to the broadcast channel and send messages to the client
-    let mut rx = tx.subscribe();
-
-    // Send messages to the client until the connection is closed
-    while let Ok(feed_item) = rx.recv().await {
-        if let Ok(json_msg) = serde_json::to_string(&feed_item) {
-            if sender
-                .send(axum::extract::ws::Message::Text(json_msg.into()))
-                .await
-                .is_err()
-            {
-                break;
-            }
-        }
-    }
-}
-
-/// Broadcasts a command usage event to all connected WebSocket clients
-pub fn broadcast_command_usage(feed_item: FeedItem) {
-    if let Some(tx) = COMMAND_TX.get() {
-        let _ = tx.send(feed_item);
-    }
+    Ok(ws.on_upgrade(handle_socket_primary))
 }
 
 /// Middleware to log incoming requests

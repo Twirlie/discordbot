@@ -1,8 +1,11 @@
 use colored::Colorize;
 use once_cell::sync::OnceCell;
 use rusqlite::Connection;
+use serde::{Deserialize, Serialize};
+use std::collections::VecDeque;
 
 pub mod web;
+pub mod websocket;
 
 pub fn format_register_response() -> String {
     "Registered application commands".to_string()
@@ -23,10 +26,24 @@ pub struct DbData {
     pub db: Connection,
 }
 
+pub const DEFAULT_DB_PATH: &str = "./history.db";
+
 /// ### Bot state, which is shared between commands
 pub struct BotState {
     /// Path to the SQLite DB file (we open per-call to avoid sharing Connection across threads)
     pub db_path: String,
+}
+
+/// FeedItem represents a Discord command usage event
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct FeedItem {
+    pub item_uuid: String,
+    pub timestamp: String,
+    pub author_id: String,
+    pub author_name: String,
+    pub command_name: String,
+    pub command_output: String,
+    pub test_item: bool,
 }
 
 /// Public global storing the codename data. Initialized during framework setup.
@@ -47,7 +64,7 @@ pub async fn db_setup(path: &str) -> DbData {
         "
         CREATE TABLE IF NOT EXISTS command_history (
             id          INTEGER PRIMARY KEY AUTOINCREMENT,
-            timestamp   INTEGER NOT NULL,
+            timestamp   TEXT NOT NULL,
             user_id     TEXT NOT NULL,
             username    TEXT NOT NULL,
             command     TEXT NOT NULL,
@@ -127,7 +144,7 @@ pub fn insert_command_history_sync(
     command_output: &str,
 ) -> rusqlite::Result<()> {
     let conn = Connection::open(db_path)?;
-    let timestamp = chrono::Utc::now().timestamp();
+    let timestamp = chrono::Utc::now().to_rfc3339();
     conn.execute(
         "INSERT INTO command_history (timestamp, user_id, username, command, output) VALUES (?1, ?2, ?3, ?4, ?5)",
         rusqlite::params![timestamp, author_id, author_name, command_name, command_output],
@@ -159,6 +176,41 @@ fn capitalize_first(s: &str) -> String {
     }
 }
 
+/// for the frontend to autoload the most recent history of commands.
+pub fn load_recent_commands(db_path: &str, x: i64) -> Result<VecDeque<FeedItem>, String> {
+    let conn = Connection::open(db_path).map_err(|e| format!("Failed to open SQLite DB: {}", e))?;
+    // check if the database is empty and return an empty vector if it is
+    let count: i64 = conn
+        .query_row("SELECT COUNT(*) FROM command_history", [], |row| row.get(0))
+        .expect("Failed to count rows in command_history");
+    if count == 0 {
+        return Ok(VecDeque::new());
+    }
+
+    let mut stmt = conn
+        .prepare("SELECT timestamp, user_id, username, command, output FROM command_history ORDER BY timestamp DESC LIMIT ?1")
+        .map_err(|e| format!("Failed to prepare SQL statement: {}", e))?;
+    let rows = stmt
+        .query_map(rusqlite::params![x], |row| {
+            Ok(FeedItem {
+                item_uuid: uuid::Uuid::new_v4().to_string(),
+                timestamp: row.get(0).unwrap_or_else(|_| "unknown".to_string()),
+                author_id: row.get(1).unwrap_or_else(|_| "unknown".to_string()),
+                author_name: row.get(2).unwrap_or_else(|_| "unknown".to_string()),
+                command_name: row.get(3).unwrap_or_else(|_| "unknown".to_string()),
+                command_output: row.get(4).unwrap_or_else(|_| "unknown".to_string()),
+                test_item: false,
+            })
+        })
+        .map_err(|e| format!("Failed to query SQL database: {}", e))?;
+    let mut items = VecDeque::new();
+    for row in rows {
+        items.push_front(row.map_err(|e| format!("Failed to parse row: {}", e))?);
+    }
+    println!("Loaded {} recent commands", items.len());
+    Ok(items)
+}
+
 /// Load codename data from a JSON file into the global `CODENAME_DATA` OnceCell.
 /// This is the crate-public version so tests and the binary can call it.
 pub async fn codename_data_setup_from_path(path: &str) {
@@ -177,6 +229,8 @@ pub async fn codename_data_setup_from_path(path: &str) {
     .await
     .expect("spawn_blocking failed when loading codename data");
 }
+
+/// read x most recent commands from the database and return them as a vector of FeedItems
 
 #[cfg(test)]
 mod tests {

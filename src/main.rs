@@ -1,11 +1,15 @@
 use colored::Colorize;
-use discordbot::{BotError, BotState, CODENAME_DATA, CodenameData, db_setup};
+use discordbot::{
+    BotError, BotState, CODENAME_DATA, CodenameData, DEFAULT_DB_PATH, FeedItem, db_setup,
+    load_recent_commands,
+};
 use dotenvy::dotenv;
 use poise::serenity_prelude as serenity;
 use serenity::prelude::*;
 use std::env;
 mod commands;
-mod web;
+pub mod web;
+pub mod websocket;
 
 #[tokio::main]
 async fn main() {
@@ -73,7 +77,7 @@ async fn run_setup(
     //load codename data
     discordbot::codename_data_setup_from_path("./assets/CodenameData.json").await;
     // Ensure the DB file and schema exist
-    db_setup("history.db").await;
+    db_setup(discordbot::DEFAULT_DB_PATH).await;
     tokio::spawn(async move {
         println!("{}", "Starting web server...".white().on_cyan());
         web::setup_web_server("3000").await;
@@ -82,6 +86,6 @@ async fn run_setup(
     // Confirm everything finished and the bot is running
     println!("{}", "Bot is running!".white().on_bright_magenta());
     Ok(BotState {
-        db_path: "history.db".to_string(),
+        db_path: discordbot::DEFAULT_DB_PATH.to_string(),
     })
 }

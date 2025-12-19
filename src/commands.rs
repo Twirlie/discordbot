@@ -1,6 +1,7 @@
 // CodenameData is defined in `main.rs` and referenced as `crate::CodenameData` where needed.
 use discordbot::{
-    BotError, Context, format_codename_response, format_register_response, log_command_usage,
+    BotError, Context, FeedItem, format_codename_response, format_register_response,
+    log_command_usage,
 };
 use poise::serenity_prelude as serenity;
 use serenity::prelude::*;
@@ -17,7 +18,7 @@ async fn send_and_log(ctx: Context<'_>, response: String) -> Result<(), BotError
     log_command_usage(&data.db_path, &ctx, &command_name, &response).await;
 
     // Broadcast to WebSocket clients
-    let feed_item = crate::web::FeedItem {
+    let feed_item = FeedItem {
         item_uuid: uuid::Uuid::new_v4().to_string(),
         timestamp: chrono::Utc::now().to_rfc3339(),
         author_id,
@@ -26,7 +27,7 @@ async fn send_and_log(ctx: Context<'_>, response: String) -> Result<(), BotError
         command_output: response,
         test_item: false,
     };
-    crate::web::broadcast_command_usage(feed_item);
+    crate::websocket::broadcast_command_usage(feed_item);
 
     Ok(())
 }

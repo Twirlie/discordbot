@@ -43,6 +43,14 @@
    */
   let botfeedItems: FeedItem[] = [];
 
+  function populateRecentFeedFromDatabase(requestSize: number, websocket: WebSocket | null) {
+    if (websocket) {
+      // Send a request to the backend to fetch the specified number of items
+      const request = { action: 'request_items', count: requestSize };
+      console.log('Requesting recent feed items from the backend:', request);
+      websocket.send(JSON.stringify(request));
+    }
+  }
 
   /**
    * Updates the bot feed with a new FeedItem
@@ -50,6 +58,7 @@
    */
   function updateBotFeed(newItem: FeedItem) {
     // update botfeedItems with new entries prepended and trim the list length to BOTFEED_MAX_ITEMS
+    console.log('Updating bot feed with new item:', newItem);
     botfeedItems = [newItem, ...botfeedItems].slice(0, BOTFEED_MAX_ITEMS);
   }
   /**
@@ -77,6 +86,7 @@
   */
   function handleNewFeeditem(item: FeedItem) {
     // this function is called whenever a new feed item is received over the websocket
+    console.log('New feed item received:', item);
     updateBotFeed(item);
   }
 
@@ -92,8 +102,12 @@
     ws.onopen = () => {
       console.log('WebSocket connected');
       wsConnected = true;
+      if (wsConnected) {
+        populateRecentFeedFromDatabase(BOTFEED_MAX_ITEMS, ws);
+      }
     };
     
+
     ws.onmessage = (event) => {
       try {
         const feedItem = JSON.parse(event.data) as FeedItem;
